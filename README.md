@@ -1,4 +1,7 @@
 # Reassign-replica-placement-from-adb
+
+### This is not fully tested for production usage. Use with caution and carefully review the resulted output for any hot spots. 
+
 This is a tool to reassign the preferred leaders to a list of Kafka brokers based on the replica placement proposed by Confluent Auto Data Balancer (ADB).
 
 This is for reassigning the replica placement for MRC cluster. When using Confluent ADB tool to reassign partition, currently ADB distributes the preferred leaders across all regions. This may not be a desirable behavior when use cases require the preferred leaders to be deterministic. On the other hand, when a topic is created with a replica placement constraint, the preferred leaders are placed in the first rack of the replica placement constraint. You may want to simulate the same behavior of the topic creation.
