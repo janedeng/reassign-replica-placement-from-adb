@@ -171,7 +171,7 @@ Content in test_new.json:
         ...... Omit lines
 
 
-7. Run a bash script to analyze the partition placement and leader distribution. You could adjust the reassignment manually if there is any hot spots.
+7. Run a bash script to analyze the partition placement and leader distribution. You could adjust the reassignment manually if there are any hot spots.
 
 $ for i in {1..6}; do echo "==== the $i position ====="; printf "count  broker-id \n"; grep result: analysis | awk -F'[][]' '{print $2}' | awk -F "," -v a=$i '{print $a}' | sort | uniq -c; done 
 
