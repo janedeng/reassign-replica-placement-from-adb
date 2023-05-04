@@ -43,7 +43,8 @@ def adjust_partition(data, prefer):
 def analyze(num_broker):
 
     print("\n#########################################################################################")
-    print("Analysis of the replica placement on brokers on each position of the preferred replica list")
+    print("Analysis of the partition placement and leader distribution")
+    print("You could adjust the reassignment manually if there are any hot spots.")
     print("count = the number of replicas placed on a particular broker-id on position X")
     print("For example: count = 3, broker-id = 1, position = 1 means there are 3 replicas placed on broker 1 on position 1 (the leaders)")
     print("Verify if there are any hot spots. If so, manually move the topic partitions from a hot spot to other brokers")

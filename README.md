@@ -125,11 +125,48 @@ Sample json from ADB:
 {"version":1,"partitions":[{"topic":"test","partition":0,"observers":[4,8],"replicas":[6,1,2,5,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":1,"observers":[4,5],"replicas":[2,6,8,1,4,5],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":2,"observers":[1,6],"replicas":[8,2,4,5,1,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":3,"observers":[2,6],"replicas":[4,8,5,1,2,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":4,"observers":[2,8],"replicas":[5,4,1,6,2,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":5,"observers":[4,8],"replicas":[1,5,6,2,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":6,"observers":[4,5],"replicas":[6,8,2,1,4,5],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":7,"observers":[1,6],"replicas":[2,4,8,5,1,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":8,"observers":[2,6],"replicas":[8,5,4,1,2,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":9,"observers":[2,8],"replicas":[4,1,5,6,2,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":10,"observers":[4,8],"replicas":[5,6,1,2,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":11,"observers":[4,8],"replicas":[1,2,6,5,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":12,"observers":[2,8],"replicas":[6,5,4,1,2,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":13,"observers":[4,8],"replicas":[2,1,5,6,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":14,"observers":[4,5],"replicas":[8,6,1,2,4,5],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":15,"observers":[1,8],"replicas":[4,2,6,5,1,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":16,"observers":[4,6],"replicas":[5,8,2,1,4,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":17,"observers":[2,6],"replicas":[1,4,8,5,2,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":18,"observers":[4,8],"replicas":[6,1,2,5,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":19,"observers":[4,5],"replicas":[2,6,8,1,4,5],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":20,"observers":[1,6],"replicas":[8,2,4,5,1,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":21,"observers":[2,6],"replicas":[4,8,5,1,2,6],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":22,"observers":[2,8],"replicas":[5,4,1,6,2,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":23,"observers":[4,8],"replicas":[1,5,6,2,4,8],"log_dirs":["any","any","any","any","any","any"]},{"topic":"test","partition":24,"observers":[2,8],"replicas":[6,5,4,1,2,8],"log_dirs":["any","any","any","any","any","any"]}]}
                                         
 
-6. Run reassign-partition-from-adb.py:
+6. Run reassign-partition-from-adb.py. Verify the analysis if there are any hot spots:
 
-$ python ~/mycode/python/reassign-partition-from-adb/reassign-partition-from-json.py -i test_prop.json -pr 1 2 4 -pt 2 -o test_new.json | tee analysis
+$ python ~/mycode/python/reassign-partition-from-adb/reassign-partition-from-json.py -i test_prop.json -pr 1 2 4 -pt 2 -o test_new.json
 
-Content in test_new.json:
+
+#########################################################################################
+Analysis of the partition placement and leader distribution
+You could adjust the reassignment manually if there are any hot spots.
+count = the number of replicas placed on a particular broker-id on position X
+For example: count = 3, broker-id = 1, position = 1 means there are 3 replicas placed on broker 1 on position 1 (the leaders)
+Verify if there are any hot spots. If so, manually move the topic partitions from a hot spot to other brokers
+###########################################################################################
+
+==== Position 1  =====
+count  broker-id 
+  31 1
+  31 2
+==== Position 2  =====
+count  broker-id 
+  31  1
+  31  2
+==== Position 3  =====
+count  broker-id 
+  34  5
+  28  6
+==== Position 4  =====
+count  broker-id 
+  28  5
+  34  6
+==== Position 5  =====
+count  broker-id 
+  40  4
+  22  8
+==== Position 6  =====
+count  broker-id 
+  22  4
+  40  8
+
+
+To check the Content in test_new.json:
+
+$ vi test_new.json
 
 {
   "version": 1,
@@ -174,43 +211,8 @@ Content in test_new.json:
         ...... Omit lines
 
 
-7. Run a bash script to analyze the partition placement and leader distribution. You could adjust the reassignment manually if there are any hot spots.
 
-$ for i in {1..6}; do echo "==== the $i position ====="; printf "count  broker-id \n"; grep result: analysis | awk -F'[][]' '{print $2}' | awk -F "," -v a=$i '{print $a}' | sort | uniq -c; done 
-
-==== the 1 position (preferred leaders) =====
-count  broker-id 
-   8 1
-   8 2
-   9 4
-==== the 2 position =====
-count  broker-id 
-  13  1
-   8  2
-   4  4
-==== the 3 position =====
-count  broker-id 
-   8  5
-   9  6
-   8  8
-==== the 4 position =====
-count  broker-id 
-  13  5
-   8  6
-   4  8
-==== the 5 position =====
-count  broker-id 
-   4  1
-   9  2
-  12  4
-==== the 6 position =====
-count  broker-id 
-   4  5
-   8  6
-  13  8
-
-
-8. Run kafka-reassign-partitions to apply the json file:
+7. Run kafka-reassign-partitions to apply the json file:
 
 $ kafka-reassign-partitions --bootstrap-server localhost:19091 --execute --reassignment-json-file  /etc/kafka/demo/test_new.json
 
@@ -220,7 +222,7 @@ Save this to use as the --reassignment-json-file option during rollback
 Successfully started partition reassignments for test-0,test-1,test-2,test-3,test-4,test-5,test-6,test-7,test-8,test-9,test-10,test-11,test-12,test-13,test-14,test-15,test-16,test-17,test-18,test-19,test-20,test-21,test-22,test-23,test-24
 
 
-9. Describe test topic to see the result:
+8. Describe test topic to see the result:
 
 $ kafka-topics --describe --bootstrap-server localhost:19091 --topic test
 Topic: test	TopicId: EXJXlu96SiqJITu9aWiiLQ	PartitionCount: 25	ReplicationFactor: 6	Configs: confluent.placement.constraints={"observerPromotionPolicy":"under-min-isr","version":2,"replicas":[{"count":2,"constraints":{"rack":"west-1"}},{"count":2,"constraints":{"rack":"east-1"}}],"observers":[{"count":1,"constraints":{"rack":"west-1"}},{"count":1,"constraints":{"rack":"east-1"}}]}
