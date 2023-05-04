@@ -1,5 +1,7 @@
 import json
 import argparse
+import sys
+import os
 
 ######################################################################
 # Confluent Automatic Rebalancer doesn't take account into the region. 
@@ -17,21 +19,38 @@ import argparse
 #######################################################################
 
 def adjust_partition(data, prefer):
-    for element in data['partitions']:
-        print ("original: " + str(element['replicas']))
-        replica_list = element['replicas'][0:(len(element['replicas'])-len(element['observers']))]
-        observers = element['observers']
-        local_replica = []
-        remote_replica = []
-        for i in range(len(replica_list)):
-            list = local_replica if replica_list[i] in prefer else remote_replica
-            list.append(replica_list[i])
-        final = local_replica + remote_replica + observers
-        element['replicas'] = final
-        print ("result: " + str(element['replicas']))
-        print ("===========")
 
+    original_stdout = sys.stdout
+    with open ('analysis.txt', 'w') as f:
+        sys.stdout = f
+        for element in data['partitions']:
+            print ("original: " + str(element['replicas']))
+            replica_list = element['replicas'][0:(len(element['replicas'])-len(element['observers']))]
+            observers = element['observers']
+            local_replica = []
+            remote_replica = []
+            for i in range(len(replica_list)):
+                list = local_replica if replica_list[i] in prefer else remote_replica
+                list.append(replica_list[i])
+            final = local_replica + remote_replica + observers
+            element['replicas'] = final
+            print ("result: " + str(element['replicas']))
+            print ("===========")
+
+    sys.stdout = original_stdout
     return data
+
+def analyze(num_broker):
+
+    print("\n#########################################################################################")
+    print("Analysis of the replica placement on brokers on each position of the preferred replica list")
+    print("count = the number of replicas placed on a particular broker-id on position X")
+    print("For example: count = 3, broker-id = 1, position = 1 means there are 3 replicas placed on broker 1 on position 1 (the leaders)")
+    print("Verify if there are any hot spots. If so, manually move the topic partitions from a hot spot to other brokers")
+    print("###########################################################################################\n")
+    cmd = """for i in {1..""" + str(num_broker) + """}; do echo "==== Position $i  ====="; printf "count  broker-id \n"; grep result: analysis.txt | awk -F'[][]' '{print $2}' | awk -F "," -v a=$i '{print $a}' | sort | uniq -c; done"""
+    os.system(cmd)
+
 
 def main():
     
@@ -53,6 +72,8 @@ def main():
     data = adjust_partition(json.load(input_file), prefer)
 
     print (data) if output_file is None else json.dump(data, output_file, indent=int(args.indent)) if args.indent is not None else json.dump(data, output_file)
+
+    analyze(len(data['partitions'][0]['replicas']))
 
 if __name__ == "__main__":
     main()
